@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { Level } from '../types';
@@ -8,6 +9,7 @@ const Levels: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { token } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchLevels = async () => {
@@ -65,6 +67,7 @@ const Levels: React.FC = () => {
         {levels.map((level) => (
           <div
             key={level.id}
+            onClick={() => navigate(`/chat/${level.id}`)}
             style={{
               backgroundColor: 'white',
               borderRadius: '0.5rem',

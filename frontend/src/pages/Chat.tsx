@@ -9,9 +9,34 @@ const Chat: React.FC = () => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [vendorName, setVendorName] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { conversationId } = useParams<{ conversationId: string }>();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+
+  // Generate a random vendor name if not already set
+  useEffect(() => {
+    if (!vendorName) {
+      const firstNames = [
+        'Sly', 'Sylvestor', 'Marc', 'Bradley', 'James', 'Phil', 'Nancy', 'Ann', 
+        'Warren', 'Pete', 'Keith', 'Jack', 'Meg', 'Richard', 'Ray', 'Dave', 
+        'Davy', 'Grace', 'Gwen', 'Tina', 'Janis', 'Nina', 'Cass', 'Brian', 
+        'David', 'Frank', 'Reginald', 'Mark', 'Louie'
+      ];
+      
+      const lastNames = [
+        'Stone', 'Bolan', 'Nowell', 'McCartney', 'Lynott', 'Wilson', 'Zevon', 
+        'Townshend', 'Moon', 'White', 'Starsky', 'Davies', 'Jones', 'Slick', 
+        'Stefani', 'Turner', 'Joplin', 'Simone', 'Elliot', 'Wilson', 'Zappa', 
+        'Dwight', 'Feld'
+      ];
+      
+      const randomFirstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+      const randomLastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+      
+      setVendorName(`${randomFirstName} ${randomLastName}`);
+    }
+  }, [vendorName]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -27,7 +52,11 @@ const Chat: React.FC = () => {
         if (!token || !conversationId) return;
         const response = await api.messages.getMessages(conversationId, token);
         if (response.success && response.data) {
-          setMessages(response.data);
+          const formattedMessages = response.data.map(msg => ({
+            ...msg,
+            isUser: msg.isUser || false
+          }));
+          setMessages(formattedMessages);
         } else {
           setError(response.error || 'Failed to fetch messages');
         }
@@ -48,7 +77,7 @@ const Chat: React.FC = () => {
     const userMessage: Message = {
       id: Date.now().toString(),
       content: input,
-      role: 'user',
+      isUser: true,
       timestamp: new Date().toISOString(),
     };
 
@@ -59,7 +88,10 @@ const Chat: React.FC = () => {
     try {
       const response = await api.messages.sendMessage(conversationId, input, token);
       if (response.success && response.data) {
-        const newMessage: Message = response.data;
+        const newMessage: Message = {
+          ...response.data,
+          isUser: response.data.isUser || false
+        };
         setMessages((prev) => [...prev, newMessage]);
       } else {
         setError(response.error || 'Failed to send message');
@@ -118,20 +150,41 @@ const Chat: React.FC = () => {
             key={message.id}
             style={{
               display: 'flex',
-              justifyContent: message.role === 'user' ? 'flex-end' : 'flex-start',
+              flexDirection: 'column',
+              alignItems: message.isUser ? 'flex-end' : 'flex-start',
               marginBottom: '1rem'
             }}
           >
+            <div style={{ 
+              fontSize: '0.75rem', 
+              color: '#6b7280',
+              marginBottom: '0.25rem',
+              fontWeight: '500'
+            }}>
+              {message.isUser ? user?.username || 'You' : vendorName}
+            </div>
             <div
               style={{
                 maxWidth: '70%',
                 padding: '0.75rem 1rem',
-                borderRadius: '0.5rem',
-                backgroundColor: message.role === 'user' ? '#4f46e5' : '#f3f4f6',
-                color: message.role === 'user' ? 'white' : '#111827'
+                borderRadius: message.isUser 
+                  ? '0.5rem 0.5rem 0 0.5rem' 
+                  : '0.5rem 0.5rem 0.5rem 0',
+                backgroundColor: message.isUser ? '#4f46e5' : '#f3f4f6',
+                color: message.isUser ? 'white' : '#111827',
+                boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+                position: 'relative'
               }}
             >
               {message.content}
+              <div style={{ 
+                fontSize: '0.75rem', 
+                color: message.isUser ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.5)',
+                marginTop: '0.25rem',
+                textAlign: message.isUser ? 'right' : 'left'
+              }}>
+                {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </div>
             </div>
           </div>
         ))}

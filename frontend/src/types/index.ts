@@ -16,7 +16,7 @@ export interface Level {
 export interface Message {
   id: string;
   content: string;
-  role: 'user' | 'assistant';
+  isUser: boolean;
   timestamp: string;
 }
 
