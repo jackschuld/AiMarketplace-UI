@@ -21,14 +21,14 @@ const Chat: React.FC = () => {
         'Sly', 'Sylvestor', 'Marc', 'Bradley', 'James', 'Phil', 'Nancy', 'Ann', 
         'Warren', 'Pete', 'Keith', 'Jack', 'Meg', 'Richard', 'Ray', 'Dave', 
         'Davy', 'Grace', 'Gwen', 'Tina', 'Janis', 'Nina', 'Cass', 'Brian', 
-        'David', 'Frank', 'Reginald', 'Mark', 'Louie'
+        'David', 'Frank', 'Reginald', 'Mark', 'Louie', 'Neil'
       ];
       
       const lastNames = [
         'Stone', 'Bolan', 'Nowell', 'McCartney', 'Lynott', 'Wilson', 'Zevon', 
         'Townshend', 'Moon', 'White', 'Starsky', 'Davies', 'Jones', 'Slick', 
         'Stefani', 'Turner', 'Joplin', 'Simone', 'Elliot', 'Wilson', 'Zappa', 
-        'Dwight', 'Feld'
+        'Dwight', 'Feld', 'Young'
       ];
       
       const randomFirstName = firstNames[Math.floor(Math.random() * firstNames.length)];
