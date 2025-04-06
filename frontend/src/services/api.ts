@@ -1,6 +1,8 @@
 import { ApiResponse, User, Level, Message } from '../types';
 
+console.log('API URL from env:', process.env.REACT_APP_API_URL);
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5107/api';
+console.log('Final API_BASE_URL:', API_BASE_URL);
 
 const getHeaders = (token?: string) => {
   const headers: Record<string, string> = {
