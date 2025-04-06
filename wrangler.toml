@@ -13,3 +13,6 @@ bucket = "./frontend/build"
 from = "/*"
 to = "/index.html"
 status = 200
+
+[env.production]
+vars = { VITE_API_URL = "http://marketplace-api.eba-hekvtpzv.us-east-2.elasticbeanstalk.com" }
