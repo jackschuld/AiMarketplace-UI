@@ -1,8 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
-import { Message } from '../types';
+import { Message, Level, UserLevel } from '../types';
+import { ConfirmationModal } from '../components/ConfirmationModal';
+import { usePoints } from '../context/PointsContext';
+
+interface PriceOffer {
+  price: number;
+  messageId: string;
+}
 
 const Chat: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -13,6 +20,15 @@ const Chat: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { conversationId } = useParams<{ conversationId: string }>();
   const { token, user } = useAuth();
+  const { totalPoints } = usePoints();
+  const [currentOffer, setCurrentOffer] = useState<PriceOffer | null>(null);
+  const [isTyping, setIsTyping] = useState(false);
+  const [level, setLevel] = useState<Level | null>(null);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [completionPrice, setCompletionPrice] = useState<number | null>(null);
+  const navigate = useNavigate();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   // Generate a random vendor name if not already set
   useEffect(() => {
@@ -57,6 +73,17 @@ const Chat: React.FC = () => {
             isUser: msg.isUser || false
           }));
           setMessages(formattedMessages);
+          
+          // Check if any message has isAccepted flag
+          const completedMessage = formattedMessages.find(msg => msg.isAccepted);
+          if (completedMessage) {
+            setIsCompleted(true);
+            // Extract price from the user's acceptance message
+            const priceMatch = formattedMessages[formattedMessages.length - 2]?.content.match(/\$(\d+)/);
+            if (priceMatch) {
+              setCompletionPrice(Number(priceMatch[1]));
+            }
+          }
         } else {
           setError(response.error || 'Failed to fetch messages');
         }
@@ -69,6 +96,37 @@ const Chat: React.FC = () => {
 
     fetchMessages();
   }, [token, conversationId]);
+
+  useEffect(() => {
+    const fetchLevel = async () => {
+      try {
+        if (!token || !conversationId) return;
+        const response = await api.levels.getById(conversationId, token);
+        if (response.success && response.data) {
+          setLevel(response.data);
+          
+          // Check if level is unlocked
+          if (response.data.requiredPoints > totalPoints) {
+            // Level is locked, redirect to levels page
+            navigate('/levels');
+            return;
+          }
+          
+          // Check completion status from userLevels
+          if (response.data.userLevels?.[0]?.isCompleted) {
+            setIsCompleted(true);
+            setCompletionPrice(response.data.userLevels[0].lastOfferedPrice);
+          }
+        } else {
+          setError(response.error || 'Failed to fetch level details');
+        }
+      } catch (err) {
+        setError('An error occurred while fetching level details');
+      }
+    };
+
+    fetchLevel();
+  }, [token, conversationId, totalPoints, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,7 +141,7 @@ const Chat: React.FC = () => {
 
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
-    setLoading(true);
+    setIsTyping(true);
 
     try {
       const response = await api.messages.sendMessage(conversationId, input, token);
@@ -100,7 +158,128 @@ const Chat: React.FC = () => {
       console.error('Error sending message:', error);
       setError('An error occurred while sending message');
     } finally {
+      setIsTyping(false);
       setLoading(false);
+    }
+  };
+
+  const extractPrice = (message: string): number | null => {
+    const priceMatch = message.match(/\$(\d+(?:\.\d{2})?)/);
+    return priceMatch ? parseFloat(priceMatch[1]) : null;
+  };
+
+  const handleAcceptOffer = async () => {
+    if (!currentOffer || !token || !conversationId || !level || !user) return;
+
+    try {
+      setLoading(true);
+      
+      // Create UserLevel structure
+      const userLevel: UserLevel = {
+        user: user,
+        level: level,
+        chatMessages: messages.map(msg => ({
+          ...msg,
+          userLevel: undefined
+        })),
+        id: 0,
+        userId: 0,
+        levelId: 0,
+        isCompleted: false,
+        stars: 0,
+        lastOfferedPrice: 0,
+        vendorOfferedPrice: 0,
+        points: 0,
+        startedAt: '',
+        completedAt: null
+      };
+
+      // Add userLevel to each message
+      const conversationHistory = messages.map(msg => ({
+        ...msg,
+        userLevel: userLevel
+      }));
+
+      // Add userLevels to the level
+      const levelWithUserLevels = {
+        ...level,
+        userLevels: [userLevel]
+      };
+
+      const response = await api.messages.acceptBid(conversationId, {
+        acceptedPrice: currentOffer.price,
+        level: levelWithUserLevels,
+        conversationHistory: conversationHistory
+      }, token);
+
+      if (response.success && response.data) {
+        const userAcceptMessage: Message = {
+          id: Date.now().toString(),
+          content: `I accept the offer of $${currentOffer.price}`,
+          isUser: true,
+          timestamp: new Date().toISOString(),
+          userLevel: userLevel
+        };
+
+        const botConfirmMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: response.data.message,
+          isUser: false,
+          timestamp: new Date().toISOString(),
+          isAccepted: true,
+          userLevel: userLevel
+        };
+
+        setMessages(prev => [...prev, userAcceptMessage, botConfirmMessage]);
+        setCurrentOffer(null);
+        setIsCompleted(true);
+        setCompletionPrice(currentOffer.price);
+      }
+    } catch (error) {
+      console.error('Error accepting offer:', error);
+      setError('Failed to accept the offer');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage && !lastMessage.isUser) {
+      const price = extractPrice(lastMessage.content);
+      if (price) {
+        setCurrentOffer({
+          price,
+          messageId: lastMessage.id
+        });
+      }
+    }
+  }, [messages]);
+
+  const handleResetChat = async () => {
+    if (!token || !conversationId) return;
+    
+    try {
+      setIsResetting(true);
+      const response = await api.messages.resetChat(conversationId, token);
+      if (response.success) {
+        // Refresh messages
+        const messagesResponse = await api.messages.getMessages(conversationId, token);
+        if (messagesResponse.success && messagesResponse.data) {
+          const formattedMessages = messagesResponse.data.map(msg => ({
+            ...msg,
+            isUser: msg.isUser || false
+          }));
+          setMessages(formattedMessages);
+        }
+      } else {
+        setError(response.error || 'Failed to reset chat');
+      }
+    } catch (error) {
+      console.error('Failed to reset chat:', error);
+      setError('Failed to reset chat');
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -131,66 +310,136 @@ const Chat: React.FC = () => {
     <div style={{ 
       display: 'flex', 
       flexDirection: 'column', 
-      height: 'calc(100vh - 4rem)', 
-      maxWidth: '800px', 
-      margin: '0 auto', 
-      padding: '1rem' 
+      height: '100vh',
+      background: 'linear-gradient(to bottom, #f5f3ff, #ffffff)'
     }}>
+      <div style={{ 
+        padding: '1rem', 
+        backgroundColor: 'white', 
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <button 
+            onClick={() => navigate('/levels')}
+            style={{
+              backgroundColor: 'transparent',
+              border: 'none',
+              color: '#4f46e5',
+              cursor: 'pointer',
+              fontSize: '1.25rem',
+              display: 'flex',
+              alignItems: 'center'
+            }}
+          >
+            ←
+          </button>
+          <h1 style={{ 
+            fontSize: '1.25rem', 
+            fontWeight: 'bold',
+            fontFamily: "'Righteous', 'Poppins', sans-serif",
+            letterSpacing: '0.5px'
+          }}>
+            {level?.name || 'Loading...'}
+          </h1>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span style={{ 
+            fontSize: '0.875rem', 
+            color: '#6b7280',
+            fontFamily: "'Poppins', sans-serif"
+          }}>
+            {totalPoints} pts
+          </span>
+          {isCompleted && (
+            <span style={{ 
+              backgroundColor: '#10b981', 
+              color: 'white', 
+              padding: '0.25rem 0.5rem', 
+              borderRadius: '9999px',
+              fontSize: '0.75rem',
+              fontWeight: '500',
+              fontFamily: "'Poppins', sans-serif"
+            }}>
+              Completed
+            </span>
+          )}
+        </div>
+      </div>
       <div style={{ 
         flex: 1, 
         overflowY: 'auto', 
-        padding: '1rem', 
-        backgroundColor: 'white', 
-        borderRadius: '0.5rem',
-        boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-        marginBottom: '1rem'
+        padding: '1rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1rem'
       }}>
-        {messages.map((message) => (
+        {messages.map((message, index) => (
           <div
             key={message.id}
             style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: message.isUser ? 'flex-end' : 'flex-start',
-              marginBottom: '1rem'
+              alignSelf: message.isUser ? 'flex-end' : 'flex-start',
+              maxWidth: '80%',
+              backgroundColor: message.isUser ? '#4f46e5' : 'white',
+              color: message.isUser ? 'white' : '#1f2937',
+              padding: '0.75rem 1rem',
+              borderRadius: '1rem',
+              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+              position: 'relative',
+              fontFamily: "'Poppins', sans-serif"
             }}
           >
-            <div style={{ 
-              fontSize: '0.75rem', 
-              color: '#6b7280',
-              marginBottom: '0.25rem',
-              fontWeight: '500'
-            }}>
-              {message.isUser ? user?.username || 'You' : vendorName}
-            </div>
-            <div
-              style={{
-                maxWidth: '70%',
-                padding: '0.75rem 1rem',
-                borderRadius: message.isUser 
-                  ? '0.5rem 0.5rem 0 0.5rem' 
-                  : '0.5rem 0.5rem 0.5rem 0',
-                backgroundColor: message.isUser ? '#4f46e5' : '#f3f4f6',
-                color: message.isUser ? 'white' : '#111827',
-                boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
-                position: 'relative'
-              }}
-            >
-              {message.content}
+            {!message.isUser && (
               <div style={{ 
-                fontSize: '0.75rem', 
-                color: message.isUser ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.5)',
-                marginTop: '0.25rem',
-                textAlign: message.isUser ? 'right' : 'left'
+                fontWeight: '500', 
+                marginBottom: '0.25rem',
+                fontSize: '0.875rem',
+                color: message.isUser ? 'white' : '#4f46e5'
               }}>
-                {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {vendorName}
               </div>
-            </div>
+            )}
+            <div style={{ whiteSpace: 'pre-wrap' }}>{message.content}</div>
+            {message.isAccepted !== undefined && (
+              <div style={{ 
+                marginTop: '0.5rem', 
+                fontSize: '0.75rem',
+                opacity: 0.8
+              }}>
+                {message.isAccepted ? 'Offer accepted' : 'Offer rejected'}
+              </div>
+            )}
           </div>
         ))}
+        {isTyping && (
+          <div
+            style={{
+              alignSelf: 'flex-start',
+              backgroundColor: 'white',
+              color: '#1f2937',
+              padding: '0.75rem 1rem',
+              borderRadius: '1rem',
+              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+              fontFamily: "'Poppins', sans-serif"
+            }}
+          >
+            <div style={{ fontWeight: '500', marginBottom: '0.25rem', fontSize: '0.875rem', color: '#4f46e5' }}>
+              {vendorName}
+            </div>
+            <div>Typing...</div>
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
-      <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '0.5rem' }}>
+      <div style={{ 
+        padding: '1rem', 
+        backgroundColor: 'white', 
+        borderTop: '1px solid #e5e7eb',
+        display: 'flex',
+        gap: '0.5rem'
+      }}>
         <input
           type="text"
           value={input}
@@ -199,28 +448,41 @@ const Chat: React.FC = () => {
           style={{
             flex: 1,
             padding: '0.75rem 1rem',
-            borderRadius: '0.375rem',
-            border: '1px solid #d1d5db',
-            outline: 'none'
+            borderRadius: '0.5rem',
+            border: '1px solid #e5e7eb',
+            outline: 'none',
+            fontSize: '0.875rem',
+            fontFamily: "'Poppins', sans-serif"
           }}
-          disabled={loading}
+          disabled={loading || isCompleted}
         />
         <button
-          type="submit"
-          disabled={loading}
+          onClick={handleSubmit}
+          disabled={!input.trim() || loading || isCompleted}
           style={{
             padding: '0.75rem 1.5rem',
             backgroundColor: '#4f46e5',
             color: 'white',
-            borderRadius: '0.375rem',
+            borderRadius: '0.5rem',
             border: 'none',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            opacity: loading ? 0.7 : 1
+            cursor: !input.trim() || loading || isCompleted ? 'not-allowed' : 'pointer',
+            fontSize: '0.875rem',
+            fontWeight: '500',
+            opacity: !input.trim() || loading || isCompleted ? 0.7 : 1,
+            fontFamily: "'Poppins', sans-serif"
           }}
         >
-          {loading ? 'Sending...' : 'Send'}
+          Send
         </button>
-      </form>
+      </div>
+
+      <ConfirmationModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onConfirm={handleResetChat}
+        title="Reset Chat"
+        message="Are you sure you want to reset this level?"
+      />
     </div>
   );
 };

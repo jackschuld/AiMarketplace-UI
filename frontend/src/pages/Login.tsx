@@ -31,13 +31,23 @@ const Login: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center">
       <div className="container" style={{ maxWidth: '400px' }}>
         <div>
-          <h2 className="text-center" style={{ fontSize: '1.875rem', fontWeight: 'bold', marginBottom: '2rem' }}>
+          <h2 className="text-center" style={{ 
+            fontSize: '1.875rem', 
+            fontWeight: 'bold', 
+            marginBottom: '2rem',
+            fontFamily: "'Righteous', 'Poppins', sans-serif",
+            letterSpacing: '0.5px'
+          }}>
             Sign in to your account
           </h2>
         </div>
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '1rem' }}>
-            <label htmlFor="email-address" style={{ display: 'block', marginBottom: '0.5rem' }}>
+            <label htmlFor="email-address" style={{ 
+              display: 'block', 
+              marginBottom: '0.5rem',
+              fontFamily: "'Poppins', sans-serif"
+            }}>
               Email address
             </label>
             <input
@@ -53,7 +63,11 @@ const Login: React.FC = () => {
             />
           </div>
           <div style={{ marginBottom: '1.5rem' }}>
-            <label htmlFor="password" style={{ display: 'block', marginBottom: '0.5rem' }}>
+            <label htmlFor="password" style={{ 
+              display: 'block', 
+              marginBottom: '0.5rem',
+              fontFamily: "'Poppins', sans-serif"
+            }}>
               Password
             </label>
             <input
@@ -68,11 +82,11 @@ const Login: React.FC = () => {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
-
           {error && (
-            <div className="text-red-500 text-center" style={{ marginBottom: '1rem' }}>{error}</div>
+            <div style={{ color: '#ef4444', marginBottom: '1rem', fontFamily: "'Poppins', sans-serif" }}>
+              {error}
+            </div>
           )}
-
           <div>
             <button
               type="submit"
@@ -82,16 +96,15 @@ const Login: React.FC = () => {
               Sign in
             </button>
           </div>
-
-          <div className="text-center" style={{ marginTop: '1rem' }}>
-            <Link
-              to="/register"
-              style={{ color: '#4f46e5', fontWeight: '500' }}
-            >
-              Don't have an account? Sign up
-            </Link>
-          </div>
         </form>
+        <div style={{ marginTop: '1.5rem', textAlign: 'center', fontFamily: "'Poppins', sans-serif" }}>
+          <p>
+            Don't have an account?{' '}
+            <Link to="/register" style={{ color: '#4f46e5', textDecoration: 'none' }}>
+              Sign up
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

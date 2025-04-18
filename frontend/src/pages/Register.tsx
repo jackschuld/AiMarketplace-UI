@@ -38,19 +38,30 @@ const Register: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center">
       <div className="container" style={{ maxWidth: '400px' }}>
         <div>
-          <h2 className="text-center" style={{ fontSize: '1.875rem', fontWeight: 'bold', marginBottom: '2rem' }}>
+          <h2 className="text-center" style={{ 
+            fontSize: '1.875rem', 
+            fontWeight: 'bold', 
+            marginBottom: '2rem',
+            fontFamily: "'Righteous', 'Poppins', sans-serif",
+            letterSpacing: '0.5px'
+          }}>
             Create your account
           </h2>
         </div>
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '1rem' }}>
-            <label htmlFor="username" style={{ display: 'block', marginBottom: '0.5rem' }}>
+            <label htmlFor="username" style={{ 
+              display: 'block', 
+              marginBottom: '0.5rem',
+              fontFamily: "'Poppins', sans-serif"
+            }}>
               Username
             </label>
             <input
               id="username"
               name="username"
               type="text"
+              autoComplete="username"
               required
               className="form-input"
               placeholder="Username"
@@ -59,7 +70,11 @@ const Register: React.FC = () => {
             />
           </div>
           <div style={{ marginBottom: '1rem' }}>
-            <label htmlFor="email-address" style={{ display: 'block', marginBottom: '0.5rem' }}>
+            <label htmlFor="email-address" style={{ 
+              display: 'block', 
+              marginBottom: '0.5rem',
+              fontFamily: "'Poppins', sans-serif"
+            }}>
               Email address
             </label>
             <input
@@ -75,7 +90,11 @@ const Register: React.FC = () => {
             />
           </div>
           <div style={{ marginBottom: '1rem' }}>
-            <label htmlFor="password" style={{ display: 'block', marginBottom: '0.5rem' }}>
+            <label htmlFor="password" style={{ 
+              display: 'block', 
+              marginBottom: '0.5rem',
+              fontFamily: "'Poppins', sans-serif"
+            }}>
               Password
             </label>
             <input
@@ -91,7 +110,11 @@ const Register: React.FC = () => {
             />
           </div>
           <div style={{ marginBottom: '1.5rem' }}>
-            <label htmlFor="confirm-password" style={{ display: 'block', marginBottom: '0.5rem' }}>
+            <label htmlFor="confirm-password" style={{ 
+              display: 'block', 
+              marginBottom: '0.5rem',
+              fontFamily: "'Poppins', sans-serif"
+            }}>
               Confirm Password
             </label>
             <input
@@ -106,30 +129,29 @@ const Register: React.FC = () => {
               onChange={(e) => setConfirmPassword(e.target.value)}
             />
           </div>
-
           {error && (
-            <div className="text-red-500 text-center" style={{ marginBottom: '1rem' }}>{error}</div>
+            <div style={{ color: '#ef4444', marginBottom: '1rem', fontFamily: "'Poppins', sans-serif" }}>
+              {error}
+            </div>
           )}
-
           <div>
             <button
               type="submit"
               className="btn btn-primary"
               style={{ width: '100%' }}
             >
-              Register
+              Sign up
             </button>
           </div>
-
-          <div className="text-center" style={{ marginTop: '1rem' }}>
-            <Link
-              to="/login"
-              style={{ color: '#4f46e5', fontWeight: '500' }}
-            >
-              Already have an account? Sign in
-            </Link>
-          </div>
         </form>
+        <div style={{ marginTop: '1.5rem', textAlign: 'center', fontFamily: "'Poppins', sans-serif" }}>
+          <p>
+            Already have an account?{' '}
+            <Link to="/login" style={{ color: '#4f46e5', textDecoration: 'none' }}>
+              Sign in
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

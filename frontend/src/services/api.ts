@@ -1,8 +1,6 @@
 import { ApiResponse, User, Level, Message } from '../types';
 
-console.log('API URL from env:', process.env.REACT_APP_API_URL);
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5107/api';
-console.log('Final API_BASE_URL:', API_BASE_URL);
 
 const getHeaders = (token?: string) => {
   const headers: Record<string, string> = {
@@ -19,6 +17,7 @@ export const api = {
   auth: {
     login: async (email: string, password: string): Promise<ApiResponse<{ token: string; user: User }>> => {
       try {
+        console.log('Attempting login to:', `${API_BASE_URL}/Auth/login`);
         const response = await fetch(`${API_BASE_URL}/Auth/login`, {
           method: 'POST',
           headers: getHeaders(),
@@ -26,14 +25,19 @@ export const api = {
           credentials: 'include',
         });
         
+        console.log('Login response status:', response.status);
+        console.log('Login response headers:', response.headers);
+        
         if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Login error response:', errorText);
           return { success: false, error: 'Login failed' };
         }
         
         const data = await response.json();
         return { success: true, data };
       } catch (error) {
-        console.error('Login error:', error);
+        console.error('Login error details:', error);
         return { success: false, error: 'Failed to login' };
       }
     },
@@ -57,6 +61,25 @@ export const api = {
         return { success: false, error: 'Failed to register' };
       }
     },
+
+    validateToken: async (token: string): Promise<ApiResponse<any>> => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/Auth/validate`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          return { success: false, error: 'Invalid token' };
+        }
+        
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: 'Failed to validate token' };
+      }
+    },
   },
 
   levels: {
@@ -74,6 +97,7 @@ export const api = {
         const data = await response.json();
         return { success: true, data };
       } catch (error) {
+        console.error('Error fetching levels:', error);
         return { success: false, error: 'Failed to fetch levels' };
       }
     },
@@ -151,6 +175,49 @@ export const api = {
         return { success: true, data };
       } catch (error) {
         return { success: false, error: 'Failed to send message' };
+      }
+    },
+
+    acceptBid: async (conversationId: string, data: {
+      acceptedPrice: number,
+      level: Level,
+      conversationHistory: Message[]
+    }, token: string) => {
+      const response = await fetch(`${API_BASE_URL}/vendor/accept-bid`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          ...data,
+          conversationId
+        })
+      });
+      
+      const responseData = await response.json();
+      if (!response.ok) {
+        console.error('Accept bid error:', responseData);
+        throw new Error(responseData.error || 'Failed to accept bid');
+      }
+      return { success: true, data: responseData };
+    },
+
+    resetChat: async (conversationId: string, token: string): Promise<ApiResponse<any>> => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/vendor/reset-chat/${conversationId}`, {
+          method: 'POST',
+          headers: getHeaders(token),
+          credentials: 'include',
+        });
+        
+        if (!response.ok) {
+          return { success: false, error: 'Failed to reset chat' };
+        }
+        
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: 'Failed to reset chat' };
       }
     },
   },

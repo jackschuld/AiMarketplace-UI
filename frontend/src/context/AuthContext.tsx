@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, AuthState } from '../types';
+import { api } from '../services/api';  // Import your api service
 
 interface AuthContextType extends AuthState {
   login: (token: string, user: User) => void;
@@ -10,22 +11,51 @@ interface AuthContextType extends AuthState {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [authState, setAuthState] = useState<AuthState>({
-    user: null,
-    token: localStorage.getItem('token'),
-    isAuthenticated: false,
+  const [authState, setAuthState] = useState<AuthState>(() => {
+    // Initialize state from localStorage
+    const token = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
+    return {
+      user: storedUser ? JSON.parse(storedUser) : null,
+      token: token || null,
+      isAuthenticated: Boolean(token && storedUser),
+    };
   });
 
+  // Validate token on mount and after token changes
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
-    if (token && user) {
-      setAuthState({
-        user: JSON.parse(user),
-        token,
-        isAuthenticated: true,
-      });
-    }
+    const validateToken = async () => {
+      const token = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+      
+      if (!token || !storedUser) {
+        return; // Don't logout if there's no token, just don't set authenticated state
+      }
+
+      try {
+        // Add an endpoint to validate the token or use an existing endpoint
+        const response = await api.auth.validateToken(token);
+        if (response.success) {
+          // Token is valid, ensure auth state is set correctly
+          setAuthState({
+            user: JSON.parse(storedUser),
+            token,
+            isAuthenticated: true,
+          });
+        } else {
+          // Only logout if token validation explicitly fails
+          logout();
+        }
+      } catch (error) {
+        console.error('Token validation error:', error);
+        // Only logout if it's an auth error, not a network error
+        if ((error as any).response?.status === 401) {
+          logout();
+        }
+      }
+    };
+
+    validateToken();
   }, []);
 
   const login = (token: string, user: User) => {
