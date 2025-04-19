@@ -431,67 +431,6 @@ const Chat: React.FC = () => {
             <div>Typing...</div>
           </div>
         )}
-        {currentOffer && !isCompleted && (
-          <div style={{
-            alignSelf: 'center',
-            maxWidth: '80%',
-            width: '100%',
-            backgroundColor: '#f3f4f6',
-            padding: '1rem',
-            borderRadius: '0.5rem',
-            boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.75rem'
-          }}>
-            <div style={{ 
-              fontSize: '0.875rem', 
-              color: '#4b5563',
-              fontFamily: "'Poppins', sans-serif",
-              textAlign: 'center'
-            }}>
-              Vendor offered: <strong>${currentOffer.price}</strong>
-            </div>
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'center', 
-              gap: '0.75rem' 
-            }}>
-              <button
-                onClick={handleAcceptOffer}
-                style={{
-                  padding: '0.5rem 1rem',
-                  backgroundColor: '#10b981',
-                  color: 'white',
-                  borderRadius: '0.375rem',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  fontFamily: "'Poppins', sans-serif"
-                }}
-              >
-                Accept ${currentOffer.price}
-              </button>
-              <button
-                onClick={() => setCurrentOffer(null)}
-                style={{
-                  padding: '0.5rem 1rem',
-                  backgroundColor: '#f3f4f6',
-                  color: '#4b5563',
-                  borderRadius: '0.375rem',
-                  border: '1px solid #d1d5db',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  fontFamily: "'Poppins', sans-serif"
-                }}
-              >
-                Continue negotiating
-              </button>
-            </div>
-          </div>
-        )}
         <div ref={messagesEndRef} />
       </div>
       <div style={{ 
@@ -501,40 +440,103 @@ const Chat: React.FC = () => {
         display: 'flex',
         gap: '0.5rem'
       }}>
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Type your message..."
-          style={{
-            flex: 1,
-            padding: '0.75rem 1rem',
-            borderRadius: '0.5rem',
-            border: '1px solid #e5e7eb',
-            outline: 'none',
-            fontSize: '0.875rem',
-            fontFamily: "'Poppins', sans-serif"
-          }}
-          disabled={loading || isCompleted}
-        />
-        <button
-          onClick={handleSubmit}
-          disabled={!input.trim() || loading || isCompleted}
-          style={{
-            padding: '0.75rem 1.5rem',
-            backgroundColor: '#4f46e5',
-            color: 'white',
-            borderRadius: '0.5rem',
-            border: 'none',
-            cursor: !input.trim() || loading || isCompleted ? 'not-allowed' : 'pointer',
-            fontSize: '0.875rem',
-            fontWeight: '500',
-            opacity: !input.trim() || loading || isCompleted ? 0.7 : 1,
-            fontFamily: "'Poppins', sans-serif"
-          }}
-        >
-          Send
-        </button>
+        {currentOffer && !isCompleted ? (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.5rem',
+            width: '100%'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '0.75rem',
+              backgroundColor: '#f3f4f6',
+              borderRadius: '0.5rem',
+              marginBottom: '0.5rem'
+            }}>
+              <span style={{ 
+                fontSize: '0.875rem', 
+                color: '#4b5563',
+                fontFamily: "'Poppins', sans-serif"
+              }}>
+                Vendor offered: <strong>${currentOffer.price}</strong>
+              </span>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button
+                  onClick={handleAcceptOffer}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: '#10b981',
+                    color: 'white',
+                    borderRadius: '0.375rem',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    fontFamily: "'Poppins', sans-serif"
+                  }}
+                >
+                  Accept ${currentOffer.price}
+                </button>
+                <button
+                  onClick={() => setCurrentOffer(null)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: '#f3f4f6',
+                    color: '#4b5563',
+                    borderRadius: '0.375rem',
+                    border: '1px solid #d1d5db',
+                    cursor: 'pointer',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    fontFamily: "'Poppins', sans-serif"
+                  }}
+                >
+                  Continue negotiating
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Type your message..."
+              style={{
+                flex: 1,
+                padding: '0.75rem 1rem',
+                borderRadius: '0.5rem',
+                border: '1px solid #e5e7eb',
+                outline: 'none',
+                fontSize: '0.875rem',
+                fontFamily: "'Poppins', sans-serif"
+              }}
+              disabled={loading || isCompleted}
+            />
+            <button
+              onClick={handleSubmit}
+              disabled={!input.trim() || loading || isCompleted}
+              style={{
+                padding: '0.75rem 1.5rem',
+                backgroundColor: '#4f46e5',
+                color: 'white',
+                borderRadius: '0.5rem',
+                border: 'none',
+                cursor: !input.trim() || loading || isCompleted ? 'not-allowed' : 'pointer',
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                opacity: !input.trim() || loading || isCompleted ? 0.7 : 1,
+                fontFamily: "'Poppins', sans-serif"
+              }}
+            >
+              Send
+            </button>
+          </>
+        )}
       </div>
 
       <ConfirmationModal
