@@ -440,6 +440,67 @@ const Chat: React.FC = () => {
         display: 'flex',
         gap: '0.5rem'
       }}>
+        {currentOffer && !isCompleted && (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.5rem',
+            width: '100%',
+            marginBottom: '1rem'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '0.75rem',
+              backgroundColor: '#f3f4f6',
+              borderRadius: '0.5rem',
+              marginBottom: '0.5rem'
+            }}>
+              <span style={{ 
+                fontSize: '0.875rem', 
+                color: '#4b5563',
+                fontFamily: "'Poppins', sans-serif"
+              }}>
+                Vendor offered: <strong>${currentOffer.price}</strong>
+              </span>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button
+                  onClick={handleAcceptOffer}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: '#10b981',
+                    color: 'white',
+                    borderRadius: '0.375rem',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    fontFamily: "'Poppins', sans-serif"
+                  }}
+                >
+                  Accept ${currentOffer.price}
+                </button>
+                <button
+                  onClick={() => setCurrentOffer(null)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: '#f3f4f6',
+                    color: '#4b5563',
+                    borderRadius: '0.375rem',
+                    border: '1px solid #d1d5db',
+                    cursor: 'pointer',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    fontFamily: "'Poppins', sans-serif"
+                  }}
+                >
+                  Continue negotiating
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         <input
           type="text"
           value={input}
