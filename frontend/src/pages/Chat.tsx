@@ -402,13 +402,13 @@ const Chat: React.FC = () => {
               </div>
             )}
             <div style={{ whiteSpace: 'pre-wrap' }}>{message.content}</div>
-            {message.isAccepted !== undefined && (
+            {message.isAccepted && (
               <div style={{ 
                 marginTop: '0.5rem', 
                 fontSize: '0.75rem',
                 opacity: 0.8
               }}>
-                {message.isAccepted ? 'Offer accepted' : 'Offer rejected'}
+                Offer accepted
               </div>
             )}
           </div>
@@ -431,6 +431,67 @@ const Chat: React.FC = () => {
             <div>Typing...</div>
           </div>
         )}
+        {currentOffer && !isCompleted && (
+          <div style={{
+            alignSelf: 'center',
+            maxWidth: '80%',
+            width: '100%',
+            backgroundColor: '#f3f4f6',
+            padding: '1rem',
+            borderRadius: '0.5rem',
+            boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.75rem'
+          }}>
+            <div style={{ 
+              fontSize: '0.875rem', 
+              color: '#4b5563',
+              fontFamily: "'Poppins', sans-serif",
+              textAlign: 'center'
+            }}>
+              Vendor offered: <strong>${currentOffer.price}</strong>
+            </div>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              gap: '0.75rem' 
+            }}>
+              <button
+                onClick={handleAcceptOffer}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: '#10b981',
+                  color: 'white',
+                  borderRadius: '0.375rem',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  fontFamily: "'Poppins', sans-serif"
+                }}
+              >
+                Accept ${currentOffer.price}
+              </button>
+              <button
+                onClick={() => setCurrentOffer(null)}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: '#f3f4f6',
+                  color: '#4b5563',
+                  borderRadius: '0.375rem',
+                  border: '1px solid #d1d5db',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  fontFamily: "'Poppins', sans-serif"
+                }}
+              >
+                Continue negotiating
+              </button>
+            </div>
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
       <div style={{ 
@@ -440,67 +501,6 @@ const Chat: React.FC = () => {
         display: 'flex',
         gap: '0.5rem'
       }}>
-        {currentOffer && !isCompleted && (
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.5rem',
-            width: '100%',
-            marginBottom: '1rem'
-          }}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '0.75rem',
-              backgroundColor: '#f3f4f6',
-              borderRadius: '0.5rem',
-              marginBottom: '0.5rem'
-            }}>
-              <span style={{ 
-                fontSize: '0.875rem', 
-                color: '#4b5563',
-                fontFamily: "'Poppins', sans-serif"
-              }}>
-                Vendor offered: <strong>${currentOffer.price}</strong>
-              </span>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button
-                  onClick={handleAcceptOffer}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    backgroundColor: '#10b981',
-                    color: 'white',
-                    borderRadius: '0.375rem',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '0.875rem',
-                    fontWeight: '500',
-                    fontFamily: "'Poppins', sans-serif"
-                  }}
-                >
-                  Accept ${currentOffer.price}
-                </button>
-                <button
-                  onClick={() => setCurrentOffer(null)}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    backgroundColor: '#f3f4f6',
-                    color: '#4b5563',
-                    borderRadius: '0.375rem',
-                    border: '1px solid #d1d5db',
-                    cursor: 'pointer',
-                    fontSize: '0.875rem',
-                    fontWeight: '500',
-                    fontFamily: "'Poppins', sans-serif"
-                  }}
-                >
-                  Continue negotiating
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
         <input
           type="text"
           value={input}
