@@ -7,7 +7,34 @@ publish = "frontend/build"
 
 pages_build_output_dir = "frontend/build"
 
-# Routes for SPA
+# Handle root path
+[[redirects]]
+from = "/"
+to = "/index.html"
+status = 200
+
+# Handle SPA routing
+[[redirects]]
+from = "/login"
+to = "/index.html"
+status = 200
+
+[[redirects]]
+from = "/register"
+to = "/index.html"
+status = 200
+
+[[redirects]]
+from = "/levels"
+to = "/index.html"
+status = 200
+
+[[redirects]]
+from = "/chat/*"
+to = "/index.html"
+status = 200
+
+# Catch all other routes
 [[redirects]]
 from = "/*"
 to = "/index.html"
